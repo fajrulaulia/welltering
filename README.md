@@ -1,93 +1,99 @@
-# Welltering Backend
+# Welltering
 
-Java-only backend and REST API repository for **welltering.com**.
+Technical monorepo for **welltering.com**, with two independently maintained applications:
 
-> **Repository status:** Initial technical documentation only. The Spring Boot application, Maven Wrapper, Docker Compose configuration, migrations, and automated tests have **not** been scaffolded yet. The commands below are the intended developer workflow **after** the project is initialized.
+| Directory | Project | Technology | Responsibility |
+| --- | --- | --- | --- |
+| `elena/` | **Elena** | Angular | Frontend application |
+| `irena/` | **Irena** | Java + Spring Boot | Backend REST API |
 
-## Technology decisions
+**Current state:** This PR documents the intended repository layout. The repository has not yet been scaffolded with either application. Commands below apply **after** the corresponding application files exist.
 
-| Area | Choice |
-| --- | --- |
-| Language | Java 21 LTS |
-| Framework | Spring Boot (stable version compatible with Java 21) |
-| Build | Maven + Maven Wrapper (`mvnw`) |
-| Persistence | Hibernate ORM via Spring Data JPA |
-| Database | PostgreSQL |
-| Schema migrations | Flyway (SQL migrations) |
-| Security | Spring Security; stateless JWT authentication |
-| Request validation | Jakarta Bean Validation |
-| API contract | OpenAPI 3.x; Springdoc/Swagger UI |
-| Testing | JUnit 5, Mockito, Spring Boot Test, Testcontainers for PostgreSQL |
-| Local infrastructure | Docker Compose for PostgreSQL |
-| Architecture | Modular monolith, package by feature |
-
-**Explicitly out of scope:** frontend, NestJS/Node.js backend, Kotlin application code, Gradle, Redis, microservices, Kafka, and Kubernetes. Additional infrastructure or dependencies require a documented reason and review.
-
-## Engineering conventions
-
-- **API-first:** Define or update the OpenAPI contract before changing REST endpoints. Use `/api/v1` for versioned application APIs.
-- **Java-only application:** Source files live under `src/main/java/com/welltering`. Test files mirror the package structure under `src/test/java`.
-- **Module boundaries:** Organize packages by feature; separate controllers, services, repositories, DTOs, and persistence entities where appropriate.
-- **Clear responsibilities:** Controllers handle HTTP and validation; services own use cases and transactions; repositories handle persistence.
-- **DTOs over entities:** Never expose JPA entities directly in public API responses.
-- **Database-first integrity:** Apply schema changes through versioned Flyway migrations. Configure Hibernate with `spring.jpa.hibernate.ddl-auto=validate`, not `update` or `create` in shared environments.
-- **Tenant-aware access:** Scope tenant-owned data by business identifier and authorize access server-side. A supplied business ID is not proof of access.
-- **Safe transactions:** Use `@Transactional`, constraints, and appropriate locking for concurrent writes. Prefer explicit idempotency for retryable state-changing operations.
-- **Consistent errors:** Use appropriate HTTP status codes and a centralized handler based on Spring `ProblemDetail` / RFC 9457.
-- **Secrets:** Keep credentials and JWT signing keys out of source control. Use environment variables and provide only safe examples.
-- **Observability:** Use structured, useful logs; never log credentials, raw bearer tokens, or sensitive payloads.
-
-## Planned repository structure
+## Repository layout
 
 ```text
 welltering/
-├── pom.xml
-├── mvnw
-├── mvnw.cmd
-├── .mvn/
-├── compose.yaml
-├── .env.example
-├── docs/
-│   └── openapi.yaml
-├── src/
-│   ├── main/
-│   │   ├── java/com/welltering/
-│   │   │   ├── WellteringApplication.java
-│   │   │   ├── common/
-│   │   │   └── modules/
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       └── db/migration/
-│   └── test/java/com/welltering/
+├── elena/                    # Angular frontend (separate project)
+├── irena/                    # Spring Boot backend (separate project)
+│   ├── pom.xml
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   ├── .mvn/
+│   ├── compose.yaml
+│   ├── .env.example
+│   ├── docs/
+│   │   └── openapi.yaml
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/welltering/
+│       │   └── resources/
+│       │       ├── application.yml
+│       │       └── db/migration/
+│       └── test/java/com/welltering/
 ├── README.md
 └── AGENT.MD
 ```
 
-This is a **target layout**, not a claim that these files exist today. Create packages only when required; avoid empty placeholder modules.
+The tree is a **target structure**, not a list of files that currently exist. Keep project-specific build tools and configuration inside their respective application directories; do not add a root-level Java build.
 
-## Local development (after scaffolding)
+## Irena — backend technical stack
 
-**Prerequisites:** JDK 21, Docker with Compose, and a working shell. Use the checked-in Maven Wrapper rather than relying on a machine-specific Maven installation.
+| Area | Decision |
+| --- | --- |
+| Language | Java 21 LTS |
+| Framework | Spring Boot (stable release compatible with Java 21) |
+| Build | Maven + Maven Wrapper |
+| ORM | Hibernate via Spring Data JPA |
+| Database | PostgreSQL |
+| Migrations | Flyway SQL migrations |
+| Authentication | Spring Security + stateless JWT |
+| Validation | Jakarta Bean Validation |
+| API specification | OpenAPI 3.x |
+| API documentation | Springdoc / Swagger UI |
+| Tests | JUnit 5, Mockito, Spring Boot Test, Testcontainers (PostgreSQL) |
+| Local infrastructure | Docker Compose for PostgreSQL |
+| Architecture | Modular monolith, packages by feature |
+| Development approach | API-first and AI-assisted |
 
-1. Copy `.env.example` to `.env` and populate local-only values.
-2. Start PostgreSQL with `docker compose up -d`.
-3. Run the application with `./mvnw spring-boot:run` (Windows: `mvnw.cmd spring-boot:run`).
-4. Run unit/integration tests with `./mvnw verify`.
-5. Review generated OpenAPI/Swagger UI once Springdoc has been configured.
+Irena does **not** use Redis, Gradle, Kotlin application code, NestJS/Node.js backend, Kafka, Kubernetes, or microservices.
 
-Default endpoints such as `/v3/api-docs`, `/swagger-ui/index.html`, and `/actuator/health` must be verified against actual application configuration before documenting them as available.
+### Backend engineering rules
 
-## Definition of done
+- Keep all Irena application code and backend-specific configuration under `irena/`.
+- Define/update the OpenAPI contract **before** implementing or changing public REST endpoints; use `/api/v1` as the API prefix.
+- Use constructor injection, request/response DTOs, Jakarta validation, clear service-layer transactions, and centralized `ProblemDetail` error handling.
+- Do not expose Hibernate/JPA entities directly in API responses.
+- Apply every schema change through versioned Flyway migrations; use Hibernate `ddl-auto=validate`.
+- Enforce backend permissions and tenant data isolation in the service/query layers.
+- Use `@Transactional`, database constraints, locking where necessary, and idempotency for retryable writes.
+- Never commit secrets or log bearer tokens, credentials, or sensitive request payloads.
+- Keep tests close to changed code; use PostgreSQL Testcontainers for transaction, locking, and persistence integration tests.
 
-A backend change is complete only when:
+### Local backend workflow (after Irena is scaffolded)
 
-- The API contract (if affected) and implementation agree.
-- Schema changes include a forward-only Flyway migration.
-- Authorization, validation, error handling, and transaction behavior are addressed.
-- Relevant unit/integration tests exist and pass.
-- `./mvnw verify` passes in the configured environment, or the blocker is explicitly documented.
-- The README or supporting technical docs are updated if setup or behavior changed.
+```bash
+cd irena
+cp .env.example .env
+docker compose up -d
+./mvnw spring-boot:run
+./mvnw verify
+```
 
-## AI coding agents
+On Windows, use `mvnw.cmd` instead of `./mvnw`. Environment values should be configured locally; never commit `.env`. Default Swagger and health URLs must be verified against the actual Spring Boot configuration.
 
-Read [AGENT.MD](AGENT.MD) before generating or modifying source code. This repository is **technical Java backend scope only**; do not introduce frontend work or product feature specifications into these repository guidelines.
+## Elena — frontend boundary
+
+`elena/` is a **separate Angular frontend project**. It must not be generated, modified, or configured as part of Java backend tasks. Its exact Angular version, tooling, and build commands should be documented when Elena is scaffolded, not guessed here.
+
+The agreed focus for the current development phase is **Irena API-first**. Backend changes should not introduce frontend code or require Elena to run in order to test the REST API.
+
+## Definition of done for Irena changes
+
+- API implementation matches its OpenAPI contract.
+- New persistence schema changes include versioned Flyway SQL migrations.
+- Authorization, validation, error handling, and transactional consistency are covered.
+- Relevant unit/integration tests exist.
+- Run `cd irena && ./mvnw verify` when Irena exists; disclose blockers or unexecuted tests explicitly.
+- Update the relevant documentation if technical setup or behavior changes.
+
+For AI coding guidelines and path boundaries, see [AGENT.MD](AGENT.MD).

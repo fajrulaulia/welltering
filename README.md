@@ -87,9 +87,26 @@ docker compose up -d
 
 On Windows, use `mvnw.cmd` instead of `./mvnw`. Environment values should be configured locally; never commit `.env`. Default Swagger and health URLs must be verified against the actual Spring Boot configuration.
 
-## Elena — frontend boundary
+## Elena — frontend technology and boundary
 
-`elena/` is a **separate Angular frontend project**. It must not be generated, modified, or configured as part of Java backend tasks. Its exact Angular version, tooling, and build commands should be documented when Elena is scaffolded, not guessed here.
+`elena/` is a **separate Angular frontend project**. The selected baseline as of 21 November 2026 is:
+
+| Area | Decision |
+| --- | --- |
+| Framework | Angular **22.3.x** (latest stable patch within the supported 22.x line) |
+| Angular CLI | Match Angular major/minor versions |
+| Language | TypeScript **6.0.x** (Angular 22 compatibility range: >=6.0.0 and <6.1.0) |
+| Node.js for tooling | **24 LTS**, version >=24.15.0 (within Angular 22's supported range) |
+| RxJS | **7.4.x** |
+| Architecture | Standalone Components |
+| API integration | Angular HttpClient communicating with Irena REST endpoints |
+
+Version compatibility reference: https://angular.dev/reference/versions
+Release/support reference: https://angular.dev/reference/releases
+
+Use a released stable patch (never `next` or `rc`) and verify latest compatible versions when `elena/` is scaffolded. Frontend project files and build commands will be documented **after** Elena exists; do not invent commands or claim the app already exists.
+
+`elena/` must not be generated, modified, or configured as part of Java backend tasks.
 
 The agreed focus for the current development phase is **Irena API-first**. Backend changes should not introduce frontend code or require Elena to run in order to test the REST API.
 

@@ -13,7 +13,9 @@ Technical monorepo for **welltering.com**, with two independently maintained app
 
 ```text
 welltering/
-├── elena/                    # Angular frontend (separate project)
+├── elena/
+│   └── AGENTS.md             # Angular design and frontend AI rules
+
 ├── irena/                    # Spring Boot backend (separate project)
 │   ├── pom.xml
 │   ├── mvnw
@@ -31,7 +33,8 @@ welltering/
 │       │       └── db/migration/
 │       └── test/java/com/welltering/
 ├── README.md
-└── AGENT.MD
+├── AGENTS.md                # Agent routing for this monorepo
+└── AGENT.MD                 # Java backend technical rules
 ```
 
 The tree is a **target structure**, not a list of files that currently exist. Keep project-specific build tools and configuration inside their respective application directories; do not add a root-level Java build.
@@ -108,6 +111,14 @@ Use a released stable patch (never `next` or `rc`) and verify latest compatible 
 
 `elena/` must not be generated, modified, or configured as part of Java backend tasks.
 
+### Elena styling system (for future Angular work)
+
+- Tailwind CSS v4 and Angular CDK, with a custom Welltering design system; no generic Angular Material/Bootstrap visual theme by default.
+- **Two brand colors:** Dark Espresso **`#4E3727`** (navigation, headings, primary controls) and Warm Cream **`#F6F0E6`** (page backgrounds and soft sections).
+- White and other neutral surfaces are allowed for readability. Status colors are restricted to meaningful feedback, not used as new brand accents.
+- Visual style: espresso sidebar, cream canvas, white cards, restrained borders/shadows, accessible forms, and responsive layouts; no wood-grain textures.
+- **Agent policy:** Read [Elena AGENTS.md](elena/AGENTS.md) before generating/changing any Angular UI. When Elena exists, enforce token usage and layout quality through code checks and visual regression reviews.
+
 The agreed focus for the current development phase is **Irena API-first**. Backend changes should not introduce frontend code or require Elena to run in order to test the REST API.
 
 ## Definition of done for Irena changes
@@ -119,4 +130,4 @@ The agreed focus for the current development phase is **Irena API-first**. Backe
 - Run `cd irena && ./mvnw verify` when Irena exists; disclose blockers or unexecuted tests explicitly.
 - Update the relevant documentation if technical setup or behavior changes.
 
-For AI coding guidelines and path boundaries, see [AGENT.MD](AGENT.MD).
+For AI coding guidelines and project routing, start at [AGENTS.md](AGENTS.md). Backend-specific rules live in [AGENT.MD](AGENT.MD), and frontend design rules live in [elena/AGENTS.md](elena/AGENTS.md).

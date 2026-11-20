@@ -18,7 +18,7 @@ This repository contains **two independent projects**, identified by their direc
 
 ## Fixed Irena technology choices
 
-- Java 21 LTS and Spring Boot (select a mutually compatible stable release).
+- Java 25 LTS as the target/runtime baseline and Spring Boot 4.x (select a compatible stable release).
 - **Maven** with Maven Wrapper (`irena/mvnw`) and `irena/pom.xml`.
 - **Hibernate ORM** through Spring Data JPA.
 - **PostgreSQL**, with versioned **Flyway SQL migrations**.
@@ -28,6 +28,12 @@ This repository contains **two independent projects**, identified by their direc
 - Modular monolith, organized by feature/package.
 
 Do **not** substitute Gradle, Kotlin application code, Node.js/NestJS backend, Redis, Kafka, Kubernetes, or microservices without an explicit revised decision.
+
+## JDK policy
+
+- Build and production target is **Java 25 LTS**. In `irena/pom.xml`, set `<java.version>25</java.version>` and `<maven.compiler.release>25</maven.compiler.release>`.
+- The developer currently has OpenJDK 27. It can be used locally if dependencies support it, but **do not** use Java 27-only language/API features.
+- Use **JDK 25** for CI, production, and runtime verification; passing an OpenJDK 27 build alone is not enough.
 
 ## Before implementation
 
@@ -83,7 +89,7 @@ Do **not** substitute Gradle, Kotlin application code, Node.js/NestJS backend, R
 ## If Irena is not yet scaffolded
 
 1. Generate a minimal Spring Boot Maven application in `irena/` only.
-2. Add Maven Wrapper, compatible dependencies, and Java 21 toolchain/release configuration.
+2. Add Maven Wrapper, compatible dependencies, and Java 25 toolchain/release configuration.
 3. Configure PostgreSQL, Flyway, and `irena/compose.yaml` for local development.
 4. Add a minimal secured application foundation, centralized error handling, and OpenAPI support.
 5. Add basic automated tests; run `cd irena && ./mvnw verify`.

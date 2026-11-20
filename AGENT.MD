@@ -1,93 +1,96 @@
-# AI Agent Instructions — Welltering Java Backend
+# AI Agent Instructions — Welltering Monorepo
 
-These instructions apply to this repository. Work on **Java backend engineering only**. This document is a technical guide, **not** a product roadmap or feature specification.
+This repository contains **two independent projects**, identified by their directory:
 
-## Fixed technology choices
+- `elena/` — **Elena**, Angular frontend.
+- `irena/` — **Irena**, Java Spring Boot backend.
 
-- **Language:** Java 21 LTS.
-- **Framework:** Spring Boot; select compatible stable library versions during initial setup.
-- **Build:** Maven with Maven Wrapper and `pom.xml`.
-- **ORM:** Hibernate, used through Spring Data JPA.
-- **Database:** PostgreSQL; use Flyway SQL migrations.
-- **Security:** Spring Security with stateless JWT authentication.
-- **Validation and API docs:** Jakarta Bean Validation and OpenAPI/Swagger.
-- **Tests:** JUnit 5, Mockito, Spring Boot Test, Testcontainers with PostgreSQL.
-- **Architecture:** Modular monolith organized by feature.
+**Current assignment scope:** Irena backend engineering only. Do not generate or modify Elena frontend code while working on Java/API tasks. This document contains technical agent rules, not product feature requirements.
 
-**Do not add:** a frontend, NestJS/Node.js services, Kotlin application code, Gradle, Redis, Kafka, Kubernetes, or microservices unless the user explicitly changes the technical decision.
+## Repository and change boundaries
 
-## Before editing
+1. Inspect the actual repository and branch before editing. The applications might not be scaffolded yet.
+2. Place Java source, Maven files, Spring configuration, database migrations, and backend tests inside `irena/` only.
+3. Never create `pom.xml`, `src/main/java`, `application.yml`, or Java migrations at the monorepo root.
+4. Never edit `elena/` unless the user explicitly requests frontend work. Its framework is **Angular**, not Next.js.
+5. Cross-project changes require explicit justification. Avoid speculative frontend/backend integration changes.
+6. Keep a narrow, reviewable change set. Do not add unrequested domain modules or premature infrastructure.
 
-1. Inspect the existing repository, current branch, and relevant files. Do not assume the Spring Boot project already exists.
-2. Read `README.md`, this file, and any existing `docs/openapi.yaml`.
-3. Keep the change within the requested technical scope. Avoid speculative domain modules or unrelated refactors.
-4. Confirm dependency compatibility before changing `pom.xml`. Prefer Spring Boot dependency management over independently pinning managed dependencies.
-5. Propose the smallest coherent implementation, then make it compile and test.
+## Fixed Irena technology choices
 
-## Java and Spring Boot conventions
+- Java 21 LTS and Spring Boot (select a mutually compatible stable release).
+- **Maven** with Maven Wrapper (`irena/mvnw`) and `irena/pom.xml`.
+- **Hibernate ORM** through Spring Data JPA.
+- **PostgreSQL**, with versioned **Flyway SQL migrations**.
+- Spring Security and stateless JWT authentication.
+- Jakarta Bean Validation and OpenAPI/Swagger documentation.
+- JUnit 5, Mockito, Spring Boot Test, and Testcontainers using PostgreSQL.
+- Modular monolith, organized by feature/package.
 
-- Use clear Java types, descriptive names, and small classes with single responsibilities.
-- Prefer constructor injection; avoid field injection.
-- Structure features as controller → application/service → repository/persistence, without adding layers that do no real work.
-- Keep HTTP-specific types out of the domain/service layer where practical.
-- Define request/response DTOs; never serialize persistence entities directly.
-- Use Java records for immutable DTOs where appropriate.
-- Put Jakarta validation constraints on input DTOs and trigger validation at API boundaries.
-- Use `@RestControllerAdvice` and Spring `ProblemDetail` for predictable error responses.
-- Use configuration properties and environment variables; never hardcode secrets.
-- Avoid unnecessary Lombok annotations, reflection, magic constants, or broad generic base classes.
+Do **not** substitute Gradle, Kotlin application code, Node.js/NestJS backend, Redis, Kafka, Kubernetes, or microservices without an explicit revised decision.
 
-## Persistence and migration rules
+## Before implementation
 
-- Use Hibernate/JPA for standard persistence operations and Spring Data JPA repositories.
-- Put **every schema change** in a new versioned Flyway migration. Never edit a migration already applied in a shared environment.
-- Set `spring.jpa.hibernate.ddl-auto=validate`; do not depend on Hibernate to create/update production schemas.
-- Define foreign keys, unique constraints, not-null constraints, and indexes based on actual access patterns.
-- Use `BigDecimal` for currency, and appropriate Java time types; make time zone assumptions explicit.
-- Plan fetch strategies deliberately; check for N+1 queries and avoid unnecessary eager relationships.
-- Apply `@Transactional` at service/use-case boundaries. Use database constraints and locking where concurrent updates may conflict.
-- Retryable writes must be idempotent where needed; never assume an HTTP request is delivered only once.
-- For tenant-owned data, verify membership/authorization and constrain database queries by tenant. Do not trust a client-provided tenant identifier alone.
+1. Read `README.md`, this file, and `irena/docs/openapi.yaml` if present.
+2. Confirm the requested change concerns `irena/`. Inspect existing code rather than assuming a particular package or version.
+3. Check build/dependency compatibility; prefer Spring Boot dependency management.
+4. Define/update the API contract first for HTTP changes.
+5. Implement the smallest complete change and run applicable checks.
 
-## API-first contract
+## Java and Spring conventions
 
-- Treat the OpenAPI specification as the contract for public HTTP endpoints.
-- Document request/response DTOs, status codes, validation errors, security requirements, and examples.
-- Keep route names RESTful and place versioned endpoints under `/api/v1`.
-- Use standard HTTP semantics (including 400, 401, 403, 404, 409, and 422 when appropriate).
-- Apply authorization in backend enforcement points, not only in controller annotations or documentation.
-- Do not expose stack traces, credentials, tokens, or internal entity implementation details in API responses.
+- Prefer constructor injection over field injection.
+- Use descriptive Java classes, methods, records for suitable immutable DTOs, and small cohesive services.
+- Keep controllers responsible for HTTP mapping and input validation; application services own use cases and transaction boundaries; repositories own persistence.
+- Never expose JPA entities directly from REST controllers.
+- Validate input DTOs using Jakarta Bean Validation.
+- Centralize API error handling using `@RestControllerAdvice` and Spring `ProblemDetail` (RFC 9457).
+- Use `BigDecimal` for monetary amounts and explicit time-zone conventions.
+- Keep authentication material and environment-specific credentials outside source control.
+- Prefer direct, readable code over generic base classes and unnecessary abstractions.
 
-## Testing expectations
+## Hibernate, PostgreSQL, and Flyway
 
-- Write unit tests for nontrivial service logic and validation behavior.
-- Use integration tests with **real PostgreSQL via Testcontainers** for JPA mappings, migrations, transactions, isolation, and locking.
-- Test unauthorized and cross-tenant access for protected resources.
-- Include concurrency and duplicate-request tests for stateful operations where applicable.
-- Do not replace important database integration tests with H2-only tests.
-- Never claim a build/test passed unless it was actually executed; report exact commands and blockers.
+- Use Hibernate/JPA for normal persistence; use constrained, parameterized native SQL only where necessary.
+- Put **all schema changes** in new versioned Flyway migrations under `irena/src/main/resources/db/migration/`.
+- Never silently edit previously applied migrations in a shared environment.
+- Configure `spring.jpa.hibernate.ddl-auto=validate`; never rely on `update` for deployed schemas.
+- Design primary keys, foreign keys, not-null/unique constraints, and indexes intentionally.
+- Review fetch strategies and avoid accidental N+1 queries.
+- Use `@Transactional` for service-level atomic operations and locking or database constraints for concurrent mutations.
+- Ensure retryable state-changing operations are idempotent where required.
+- For tenant-owned records, enforce membership/permissions and tenant-scoped queries server-side. Never assume a client-provided tenant ID grants access.
 
-## Initial scaffolding sequence
+## API-first specification
 
-If the repository is still documentation-only:
+- Store Irena's API contract at `irena/docs/openapi.yaml` when scaffolded.
+- Use `/api/v1` for versioned application endpoints.
+- Specify request/response schemas, authorization, validation, error/status codes, and examples.
+- Follow standard HTTP semantics, including 400, 401, 403, 404, 409, and 422 as appropriate.
+- Keep implementation, OpenAPI, and tests consistent.
+- Do not expose stack traces, tokens, secrets, or JPA internals in public responses.
 
-1. Generate a minimal Spring Boot Maven project using Java 21 and the chosen compatible stable Spring Boot release.
-2. Commit Maven Wrapper files and `pom.xml`.
-3. Configure PostgreSQL, Flyway, and a Docker Compose development database.
-4. Add a minimal health check, centralized error handling, and Spring Security defaults.
-5. Add OpenAPI support and basic automated tests.
-6. Execute `./mvnw verify` and document the observed result.
+## Testing and verification
 
-Do **not** pre-generate an entire business domain before a feature contract has been agreed.
+- Unit test nontrivial logic and validation cases.
+- Use real PostgreSQL via Testcontainers for migrations, entity mappings, transactions, locks, and tenant isolation.
+- Test unauthorized access and cross-tenant data access where applicable.
+- Include concurrency and duplicate-request coverage for stateful operations.
+- Do not use H2-only tests as a replacement for PostgreSQL integration tests.
+- Run checks from **`irena/`**, e.g. `cd irena && ./mvnw verify`, once the project exists.
+- Never claim a command or test passed unless it actually ran; provide accurate blockers and outcomes.
 
-## Delivery checklist
+## If Irena is not yet scaffolded
 
-When finishing a change, report:
+1. Generate a minimal Spring Boot Maven application in `irena/` only.
+2. Add Maven Wrapper, compatible dependencies, and Java 21 toolchain/release configuration.
+3. Configure PostgreSQL, Flyway, and `irena/compose.yaml` for local development.
+4. Add a minimal secured application foundation, centralized error handling, and OpenAPI support.
+5. Add basic automated tests; run `cd irena && ./mvnw verify`.
+6. Document any setup steps in the appropriate README.
 
-- Files changed and why.
-- Relevant architectural or dependency decisions.
-- Commands actually run and their outcomes.
-- Security, migration, or compatibility considerations.
-- Any missing implementation or tests (explicitly, without overstating readiness).
+Do not scaffold `elena/` during this workflow.
 
-Use a focused branch and pull request for changes. Do not commit secrets, environment files with credentials, build outputs, or generated local artifacts.
+## Completion report
+
+Summarize files changed, key technical decisions, exact commands/tests run and their outcomes, and any outstanding security or migration issues. Use a dedicated branch and PR. Do not commit `.env`, secrets, build output, or local-generated files.

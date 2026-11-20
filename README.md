@@ -40,8 +40,8 @@ The tree is a **target structure**, not a list of files that currently exist. Ke
 
 | Area | Decision |
 | --- | --- |
-| Language | Java 21 LTS |
-| Framework | Spring Boot (stable release compatible with Java 21) |
+| Language | Java 25 LTS |
+| Framework | Spring Boot 4.x (compatible stable release) |
 | Build | Maven + Maven Wrapper |
 | ORM | Hibernate via Spring Data JPA |
 | Database | PostgreSQL |
@@ -56,6 +56,12 @@ The tree is a **target structure**, not a list of files that currently exist. Ke
 | Development approach | API-first and AI-assisted |
 
 Irena does **not** use Redis, Gradle, Kotlin application code, NestJS/Node.js backend, Kafka, Kubernetes, or microservices.
+
+### Java version and runtime consistency
+
+- **Target:** Java 25 LTS. Configure Maven with `<java.version>25</java.version>` and `<maven.compiler.release>25</maven.compiler.release>` in `irena/pom.xml`.
+- **Developer machines:** OpenJDK 27 may be used locally if the chosen Spring Boot and tooling support it. Using `--release 25` prevents accidental use of Java 27 language/API features.
+- **CI and production:** Use JDK 25 to test the actual production runtime. Also run tests on JDK 25 before merging; compiling under JDK 27 alone is not sufficient evidence of Java 25 runtime compatibility.
 
 ### Backend engineering rules
 
